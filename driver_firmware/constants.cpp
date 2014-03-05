@@ -45,5 +45,5 @@ const PinMask DISPLAY_NOT_ROW_PIN_MASK = getDisplayNotRowPinMask();
 
 // I2C communications
 // ----------------------------------------------------------------------------
-const uint8_t I2C_ADDRESS = 1;
+const uint8_t I2C_ADDRESS = 4;
 

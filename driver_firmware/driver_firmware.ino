@@ -11,7 +11,7 @@
 #include <Streaming.h>
 #endif
 
-void displayTest();
+void displayPixelTest();
 
 void setup()
 {
@@ -32,8 +32,8 @@ void setup()
 
 void loop()
 {
-    //i2cHandler.processMsg();
-    displayTest();
+    i2cHandler.processMsg();
+    //displayPixelTest();
 }
 
 
@@ -52,11 +52,11 @@ inline void i2cEventCallback(int numBytes)
 
 // DEVEL
 // ----------------------------------------------------------------------------
-void displayTest()
+void displayPixelTest()
 {
     static uint8_t row=0;
     static uint8_t col=0;
-    //I2CMessageBuffer msg;
+
     DisplayMatrix matrix;
     matrix.setAllZero();
     matrix.setNumGrayScaleValues(MAX_NUM_GRAYSCALE_VALUES);

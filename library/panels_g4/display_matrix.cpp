@@ -137,7 +137,8 @@ bool DisplayMatrix::setDataFromMsg(I2CMessageBuffer &msg)
     // Extract data from message
     setNumGrayScaleValues(numGrayScaleValues);
     uint8_t bitsPerElem = getNumBitsPerElem(numGrayScaleValues);
-    uint16_t bitCnt = 3*8; // matrix data starts wtih 3rd byte  
+    uint8_t dataStartByte = 3;
+    uint16_t bitCnt = dataStartByte*8; // matrix data starts wtih 3rd byte  
 
     for (uint8_t row=0; row<DISPLAY_MATRIX_SIZE; row++)
     {
@@ -161,12 +162,12 @@ I2CMessageBuffer DisplayMatrix::getMsgFromData()
 {
     I2CMessageBuffer msg;
     uint8_t bitsPerElem = getNumBitsPerElem(numGrayScaleValues_);
-    uint8_t numBytesInMsg = getNumBytesForGrayScale(numGrayScaleValues_)+1;
+    uint8_t numDataBytesInMsg = getNumBytesForGrayScale(numGrayScaleValues_)+1;
     uint8_t dataStartByte = 3;
     uint16_t bitCnt = dataStartByte*8; 
 
     msg.setByte(0,CMD_SET_DISPLAY_DATA);
-    msg.setByte(1,numBytesInMsg);
+    msg.setByte(1,numDataBytesInMsg);
     msg.setByte(2,numGrayScaleValues_);
     msg.zeroFromBytePos(dataStartByte);  
 
@@ -182,6 +183,7 @@ I2CMessageBuffer DisplayMatrix::getMsgFromData()
             }
         }
     }
+    msg.setLength(numDataBytesInMsg+2); 
     return msg;
 }
 

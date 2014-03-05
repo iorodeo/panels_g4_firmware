@@ -53,7 +53,9 @@ extern const DisplayRotation DEFAULT_DISPLAY_ROTATION;
 // I2C communications
 // ----------------------------------------------------------------------------
 enum {I2C_BUFFER_SIZE=42};
+enum {I2C_NUM_SLAVES=4};
 extern const uint8_t I2C_MIN_MESSAGE_SIZE;
+extern const uint8_t I2C_SLAVE_ADDRESS[I2C_NUM_SLAVES];
 
 
 // Serial Debugging

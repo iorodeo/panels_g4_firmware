@@ -7,9 +7,30 @@
 
 const uint16_t I2CMessageBuffer::bufferSizeInBits_ = uint16_t(I2C_BUFFER_SIZE)*8;
 
+
 I2CMessageBuffer::I2CMessageBuffer()
 {
     zero();
+    length_ = 0;
+}
+
+
+void I2CMessageBuffer::setLength(uint8_t length)
+{
+    if (length < I2C_BUFFER_SIZE)
+    {
+        length_ = length;
+    }
+    else
+    {
+        length_ = 0;
+    }
+}
+
+
+uint8_t I2CMessageBuffer::getLength()
+{
+    return length_;
 }
 
 
@@ -111,6 +132,11 @@ uint32_t I2CMessageBuffer::getUint32(uint8_t pos)
     {
         return 0;
     }
+}
+
+uint8_t (&I2CMessageBuffer::getDataArray())[I2C_BUFFER_SIZE]
+{
+    return data_;
 }
 
 
