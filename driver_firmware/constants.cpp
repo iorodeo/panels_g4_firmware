@@ -3,7 +3,8 @@
 
 // Display constants
 // ----------------------------------------------------------------------------
-const uint32_t DEFAULT_DISPLAY_TIMER_PERIOD = 25;
+const uint32_t DEFAULT_DISPLAY_TIMER_PERIOD = 31;
+const bool DEFAULT_USE_LOOKUP_TABLE = true;
 
 // Pin masks for fast direct port IO
 // ----------------------------------------------------------------------------

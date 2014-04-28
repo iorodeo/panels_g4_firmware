@@ -8,6 +8,7 @@
 // ----------------------------------------------------------------------------
 enum {DISPLAY_NUM_BUFFER = 2};
 extern const uint32_t DEFAULT_DISPLAY_TIMER_PERIOD;
+extern const bool DEFAULT_USE_LOOKUP_TABLE;
 
 // Pin masks for fast direct port IO
 // ----------------------------------------------------------------------------

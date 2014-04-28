@@ -17,39 +17,6 @@ DisplayMatrix::DisplayMatrix()
     flip_ = DEFAULT_DISPLAY_FLIP;
 }
 
-
-uint8_t DisplayMatrix::getPixel(uint8_t row, uint8_t col, bool flipAndRotate)
-{
-    if ((row < DISPLAY_MATRIX_SIZE) && (col < DISPLAY_MATRIX_SIZE))
-    {
-        if (flipAndRotate)
-        {
-            getFlippedRowAndCol(row, col); 
-            getRotatedRowAndCol(row, col);
-        }
-        return matrixData_[row][col];
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-
-void DisplayMatrix::setPixel(uint8_t row, uint8_t col, uint8_t val, bool flipAndRotate)
-{
-    if ((row < DISPLAY_MATRIX_SIZE) && (col < DISPLAY_MATRIX_SIZE))
-    {
-        if (flipAndRotate)
-        {
-            getFlippedRowAndCol(row, col); 
-            getRotatedRowAndCol(row, col);
-        }
-        matrixData_[row][col] = val;
-    }
-}
-
-
 void DisplayMatrix::setRow(uint8_t row, uint8_t val)
 {
     for (uint8_t col=0; col<DISPLAY_MATRIX_SIZE; col++)
@@ -161,6 +128,13 @@ bool DisplayMatrix::setDataFromMsg(I2CMessageBuffer &msg)
 I2CMessageBuffer DisplayMatrix::getMsgFromData()
 {
     I2CMessageBuffer msg;
+    getMsgFromData(msg);
+    return msg;
+}
+
+
+void DisplayMatrix::getMsgFromData(I2CMessageBuffer &msg)
+{
     uint8_t bitsPerElem = getNumBitsPerElem(numGrayScaleValues_);
     uint8_t numDataBytesInMsg = getNumBytesForGrayScale(numGrayScaleValues_)+1;
     uint8_t dataStartByte = 3;
@@ -183,8 +157,7 @@ I2CMessageBuffer DisplayMatrix::getMsgFromData()
             }
         }
     }
-    msg.setLength(numDataBytesInMsg+2); 
-    return msg;
+    msg.setLength(numDataBytesInMsg+3); 
 }
 
 

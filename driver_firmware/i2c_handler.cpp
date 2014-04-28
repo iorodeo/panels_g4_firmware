@@ -39,6 +39,7 @@ void I2CHandler::processMsg()
     {
         if (haveNewMsg_)
         {
+            // Don't need to copy the entire buffer
             for (uint8_t i=0; i<I2C_BUFFER_SIZE; i++)
             {
                 msgCopy.data_[i] = msg_.data_[i];

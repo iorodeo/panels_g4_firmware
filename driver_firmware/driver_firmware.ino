@@ -2,7 +2,8 @@
 #include <util/atomic.h>
 #include <Wire.h>
 #include <TimerOne.h>
-#include "panels_g4.h"
+#include <panels_g4.h>
+#include <PinChangeInt.h>
 #include "constants.h" 
 #include "display_driver.h"
 #include "i2c_handler.h"
@@ -27,12 +28,16 @@ void setup()
     // Setup i2c message handler
     i2cHandler.initialize();
     i2cHandler.setReceiveEventCallback(i2cEventCallback);
+
+    pinMode(A2,INPUT);
+    PCintPort::attachInterrupt(A2,swapFrameCallback,RISING);
 }
 
 
 void loop()
 {
     i2cHandler.processMsg();
+    displayDriver.checkForSwap();
     //displayPixelTest();
 }
 
@@ -48,6 +53,11 @@ inline void i2cEventCallback(int numBytes)
     i2cHandler.copyMsgToBuffer(numBytes);
 }
 
+
+inline void swapFrameCallback()
+{
+    displayDriver.setSwapIntFlag();
+}
 
 
 // DEVEL

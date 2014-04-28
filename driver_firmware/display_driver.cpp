@@ -12,8 +12,10 @@ DisplayDriver::DisplayDriver()
     activeBuffer_ = 0;
     writeBuffer_ = 1; 
     swapBufferFlag_ = false;
+    swapIntFlag_ = false;
+    newDataReady_ = false;
+    useLookupTable_ = DEFAULT_USE_LOOKUP_TABLE;
 }
-
 
 void DisplayDriver::initialize()
 {
@@ -129,6 +131,42 @@ bool DisplayDriver::bufferSetDataFromMsg(I2CMessageBuffer &msg)
 void DisplayDriver::bufferCreateLookupTable()
 {
     buffer_[writeBuffer_].createLookupTable();
+}
+
+void DisplayDriver::setSwapIntFlag()
+{
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    {
+        swapIntFlag_ = true;
+    }
+}
+
+
+void DisplayDriver::setNewDataReady()
+{
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    {
+        newDataReady_ = true;
+    }
+}
+
+void DisplayDriver::checkForSwap()
+{
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    {
+        if ( swapIntFlag_ && newDataReady_)
+        {
+            swapBufferFlag_ = true;;
+            swapIntFlag_ = false;
+            newDataReady_ = false;
+        }
+    }
+}
+
+
+bool DisplayDriver::useLookupTable()
+{
+    return useLookupTable_;
 }
 
 

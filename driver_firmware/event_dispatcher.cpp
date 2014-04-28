@@ -139,6 +139,7 @@ void EventDispatcher::setDisplayData(I2CMessageBuffer &msg)
     if (rtnStatus == true)
     {
         displayDriver.bufferCreateLookupTable();
+        displayDriver.setNewDataReady();
     }
 } 
 
