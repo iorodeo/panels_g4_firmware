@@ -1,6 +1,7 @@
 Firmware (atmega328) for the fourth generation (G4) panels prototypes.
 
-comm: firmware for communications (comm) sub-panel 
-driver: firmware for led matrix driver sub-panel
-test_controllers:  firmware for Arduino based test controllers (due and uno)
+hardware_v0p1: firmware for hardware version 0.1 - i2c is used for comm/driver sub-panel communications. 
+
+hardware_v0p2: firmware for hardware version 0.2 - spi is used for comm/driver sub-panel communications. 
+
 
