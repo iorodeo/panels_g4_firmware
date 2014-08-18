@@ -13,7 +13,7 @@
 //
 // ----------------------------------------------------------------------------
 
-enum {BUFFER_SIZE=4};
+enum {BUFFER_SIZE=255};
 const uint8_t MSPIM_SCK = 4;
 const uint8_t MSPIM_SS = 5;
 
@@ -35,14 +35,14 @@ uint8_t MSPIM_TransferByte(uint8_t value)
 }
 
 
-void MSPIM_writeBuffer(uint8_t buffer[])
+void MSPIM_WriteBuffer(uint8_t buffer[],uint8_t numBytes=BUFFER_SIZE)
 {
 
     // Enable slave select
     digitalWrite (MSPIM_SS, LOW);
 
     // Transfer buffer
-    for (uint8_t i=0; i<BUFFER_SIZE; i++)
+    for (uint8_t i=0; i<numBytes; i++)
     {
         MSPIM_TransferByte(buffer[i]);
     }
@@ -66,12 +66,25 @@ void setup()
     pinMode(MSPIM_SCK, OUTPUT);              // Set XCK pin as output to enable master mode
     UCSR0C = _BV(UMSEL00) | _BV(UMSEL01);    // Master SPI mode
     UCSR0B = _BV(TXEN0)   | _BV(RXEN0);      // transmit enable and receive enable
-    UBRR0 = 3;                               // Must be done last, see page 206 (2 Mhz clock rate)
+    //UBRR0 = 3;                               // Must be done last, see page 206 (2 Mhz clock rate)
+    UBRR0 = 1;                               // Must be done last, see page 206 (2 Mhz clock rate)
     pinMode(MSPIM_SCK,OUTPUT);               
     // ------------------------------------------------------------------------
 }
 
 void loop()
 {
+    uint8_t buffer[BUFFER_SIZE];
+    static uint8_t cnt = 0;
 
+    buffer[0] = BUFFER_SIZE;
+    for (uint8_t i=1; i<BUFFER_SIZE; i++)
+    {
+        buffer[i] = i-1;
+    }
+
+    MSPIM_WriteBuffer(buffer, BUFFER_SIZE);
+
+    cnt++;
+    delay(500);
 }
