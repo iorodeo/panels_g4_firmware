@@ -10,12 +10,9 @@ void SPI_Initialize()
 
 void SPI_ReceiveMsg(Buffer &buffer)
 {
-    uint8_t msgSize;
-    uint8_t pwmType;
-    uint8_t delayValue;
-
     // Spin loop for receiving SPI messages
-    // ------------------------------------------------------------------------
+    uint8_t msgSize;
+
     while (!(SPSR & _BV(SPIF)));
     while (true)
     {

@@ -4,12 +4,18 @@
 // ----------------------------------------------------------------------------
 #define NOP __asm__ __volatile__ ("nop\n\t")
 
+// Normal
+//#define SET_COL_PINS(value) ((PORTD=value))
+
+// Serial Debug
 #define SET_COL_PINS(value) ({                           \
+    PORTD = PORTD + (value & 0xfc);                      \
+})
+
+#define SET_ROW_PINS(value) ({                           \
     PORTB = (PORTB & 0b11000000) + (value & 0b00111111); \
     PORTC = (PORTC & 0b11111100) + (value  >> 6);        \
 })
-
-#define SET_ROW_PINS(value) ((PORTD=value))
 
 // Constants 
 // ----------------------------------------------------------------------------
@@ -21,35 +27,30 @@ const uint8_t PWM_TYPE_2 = 0;
 const uint8_t PWM_TYPE_16 = 1;
 const uint8_t DELAY_MASK = 0xfe;
 const uint8_t DELAY_SHIFT = 1;
-
-// Replace with SPI communications
-// ============================================================================
-const uint8_t I2C_TYPE_2_MSG_SIZE = 9;
-const uint8_t I2C_TYPE_16_MSG_SIZE = 33;
-// ============================================================================
+const uint8_t PWM_TYPE_2_MSG_SIZE = 9;
+const uint8_t PWM_TYPE_16_MSG_SIZE = 33;
 
 
 // Functions
 // ----------------------------------------------------------------------------
 void setup()
 {
-    // Replace with SPI communications
-    // ========================================================================
-    // Setup I2C communications
-    TWAR = ADDRESS << 1;
-    TWCR =  (1<<TWEA) | (1<<TWINT) | (1<<TWEN);
-    // ========================================================================
+    // Setup SPI communications
+    pinMode(MISO,OUTPUT);
+    pinMode(SS, INPUT);
+    SPCR |= _BV(SPE);
 
-    // Set data direction for column pins
+    // Set data direction for row pins
     DDRB |= _BV(0) | _BV(1) | _BV(2) | _BV(3)| _BV(4)| _BV(5);
     DDRC |= _BV(0) | _BV(1);
 
-    // Set data direction for row pins
-    DDRD = 0xff;
+    // Set data direction for col pins
+    //DDRD = 0xff; // Normal 
+    DDRD = 0xfc;   // Serial Debug 
 
     // Set initial state for column and row pins
-    SET_COL_PINS(0xff); 
-    SET_ROW_PINS(0x00);
+    SET_COL_PINS(0x00); 
+    SET_ROW_PINS(0xff);
 
     // Turn off interrupts
     noInterrupts();
@@ -59,69 +60,50 @@ void loop()
 {
     static uint8_t buffer[BUF_SIZE];
     static uint8_t bufPos = 0;
+    bool dataReady = false;
+    uint8_t msgSize;
+    uint8_t pwmType;
 
-    // Replace with SPI communications
-    // ========================================================================
-    uint8_t twiCount = 0;
-    uint8_t twiError = false;
-
-    // Reading incoming i2c messages 
+    // Read incoming spi message
     // ------------------------------------------------------------------------
+    while (!(SPSR & _BV(SPIF)));
     while (true)
     {
-        // Spin-loop - wait for incoming bytes w/ timeout count
-        twiCount = 0;
-        twiError = false;
-        while (!(TWCR & _BV(TWINT)))
+        // Read byte from spi data register
+        buffer[bufPos] = SPDR;
+        bufPos++;
+        if (bufPos == 1)
         {
-            twiCount++;
-            if (twiCount >= TWI_MAX_COUNT)
+            pwmType = buffer[0] & PWM_TYPE_MASK; 
+            if (pwmType == PWM_TYPE_16)
             {
-                bufPos = 0;
-                TWCR &= ~((1<<TWEA) | (1<<TWEN));
-                twiError = true;
-                break;
-            }
-        }
-        if (twiError)
-        {
-            TWCR =  (1<<TWEA) | (1<<TWINT) | (1<<TWEN);
-        }
-        else
-        {
-            if( (TWSR & 0xF8) == TW_SR_SLA_ACK )
-            {
-                // Address acknowledge - start of message
-                bufPos = 0;
-                TWCR |=   (1<<TWINT) | ((0<<TWEA) | 1<<TWEN);
-            }
-            else if((TWSR & 0xF8) == TW_SR_DATA_ACK)
-            {
-                // Received data byte
-                if (bufPos < BUF_SIZE)
-                { 
-                    buffer[bufPos] = TWDR;
-                    bufPos++;
-                    TWCR |= (1<<TWINT) | (1<<TWEA) | (1<<TWEN); 
-                }
-                else
-                {
-                    TWCR |=  (1<<TWINT) | (0<<TWEA) | (1<<TWEN); 
-                }
+                msgSize = PWM_TYPE_16_MSG_SIZE;
             }
             else
             {
-                // None of the above prepare TWI to be addressed again
-                TWCR |=  (1<<TWINT) | (1<<TWEA) | (1<<TWEN);
-                break;
+                msgSize = PWM_TYPE_2_MSG_SIZE;
             }
         }
+        if (bufPos >= msgSize)
+        {
+            dataReady = true;
+            break;
+        }
+        while (!(SPSR & _BV(SPIF)));
     }
-    // =======================================================================
+    while (digitalRead(SS) == 0); // Slow replace with direct port read
+
+    // Read SPSR and SPDR a couple times - to clear out any possible mismatch 
+    for (uint8_t i=0; i<5; i++)
+    {
+        uint8_t dummy0 = SPSR & _BV(SPIF);
+        uint8_t dummy1 = SPDR;
+    }
+
 
     // Update display 
     // ------------------------------------------------------------------------
-    if (bufPos > 0)
+    if (dataReady)
     {
         uint8_t *bufferPtr = buffer;
         uint8_t row = 0;
@@ -132,24 +114,14 @@ void loop()
         uint8_t pwmMaxCount;
         uint8_t delayValue;
 
-        // Get pwm type - reject if message size is incorrect
-        if ((*buffer & PWM_TYPE_MASK) == PWM_TYPE_16)
+        // Get max count for pwm and delayValue
+        if (pwmType ==  PWM_TYPE_2_MSG_SIZE)
         {
             pwmMaxCount = 16;
-            if (bufPos != I2C_TYPE_16_MSG_SIZE)
-            {
-                bufPos = 0;
-                return;
-            }
         }
         else
         {
             pwmMaxCount = 2;
-            if (bufPos != I2C_TYPE_2_MSG_SIZE)
-            {
-                bufPos = 0;
-                return;
-            }
         }
         delayValue = (*buffer & DELAY_MASK);
 
@@ -200,8 +172,8 @@ void loop()
             {
                 pwm = 0;
                 row++;
-                SET_COL_PINS(0xff);
-                SET_ROW_PINS(_BV(row%8));
+                SET_COL_PINS(0x00);
+                SET_ROW_PINS(~_BV(row%8));
             }
             if (delayValue > 0)
             {
@@ -211,8 +183,9 @@ void loop()
                 }
             }
         }
-
-        // Reset buffer position
-        bufPos = 0;
     }
+    // Reset buffer position
+    bufPos = 0;
 }
+
+

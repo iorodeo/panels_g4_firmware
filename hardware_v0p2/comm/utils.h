@@ -8,11 +8,21 @@ class Buffer
     public:
         Buffer();
         void clear();
+        inline void insert(uint8_t value);
         uint8_t data[BUFFER_SIZE];
         uint8_t dataLen;
         bool dataReady;
         bool errorFlag;
 };
+
+inline void Buffer::insert(uint8_t value)
+{
+    if (dataLen < (BUFFER_SIZE-1))
+    {
+        data[dataLen] = value;
+        dataLen++;
+    }
+}
 
 
 void resetAllSlaves();
