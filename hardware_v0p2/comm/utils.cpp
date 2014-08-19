@@ -12,6 +12,14 @@ Buffer::Buffer()
 }
 
 
+void Buffer::clear()
+{ 
+    dataLen = 0;
+    dataReady = false;
+    errorFlag = false;
+}
+
+
 void resetAllSlaves()
 {
     *SLAVE_RESET_OUT_REG &= ~SLAVE_RESET_PIN_MASK;

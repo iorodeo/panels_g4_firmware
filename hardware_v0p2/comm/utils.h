@@ -7,20 +7,12 @@ class Buffer
 {
     public:
         Buffer();
-        inline void clear();
+        void clear();
         uint8_t data[BUFFER_SIZE];
         uint8_t dataLen;
         bool dataReady;
         bool errorFlag;
 };
-
-
-inline void Buffer::clear()
-{ 
-    dataLen = 0;
-    dataReady = false;
-    errorFlag = false;
-}
 
 
 void resetAllSlaves();
@@ -38,7 +30,5 @@ inline uint8_t getBufferMsgSize(Buffer &buffer)
         return SLAVE_TYPE_2_MSG_SIZE;
     }
 }
-
-
 
 #endif
