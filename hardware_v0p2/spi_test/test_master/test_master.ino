@@ -63,12 +63,13 @@ void setup()
     pinMode(MSPIM_SS,OUTPUT);
     UBRR0 = 0;                               // Must be zero before enabling the transmitter
     UCSR0A = _BV (TXC0);                     // any old transmit now complete 
-    pinMode(MSPIM_SCK, OUTPUT);              // Set XCK pin as output to enable master mode
+
     UCSR0C = _BV(UMSEL00) | _BV(UMSEL01);    // Master SPI mode
     UCSR0B = _BV(TXEN0)   | _BV(RXEN0);      // transmit enable and receive enable
     //UBRR0 = 3;                               // Must be done last, see page 206 (2 Mhz clock rate)
     UBRR0 = 1;                               // Must be done last, see page 206 (2 Mhz clock rate)
-    pinMode(MSPIM_SCK,OUTPUT);               
+
+    pinMode(MSPIM_SCK, OUTPUT);              // Set XCK pin as output to enable master mode
     // ------------------------------------------------------------------------
 }
 
