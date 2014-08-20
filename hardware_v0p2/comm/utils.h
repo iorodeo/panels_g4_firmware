@@ -22,6 +22,10 @@ inline void Buffer::insert(uint8_t value)
         data[dataLen] = value;
         dataLen++;
     }
+    else
+    {
+        errorFlag = true;
+    }
 }
 
 
@@ -33,11 +37,11 @@ inline uint8_t getBufferMsgSize(Buffer &buffer)
     uint8_t pwmType = buffer.data[0] & PWM_TYPE_MASK; 
     if (pwmType == PWM_TYPE_16)
     {
-        return SLAVE_TYPE_16_MSG_SIZE;
+        return PWM_TYPE_16_MSG_SIZE;
     }
     else
     {
-        return SLAVE_TYPE_2_MSG_SIZE;
+        return PWM_TYPE_2_MSG_SIZE;
     }
 }
 

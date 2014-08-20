@@ -1,21 +1,26 @@
 #include <util/twi.h>
 
+#ifdef SERIAL_DEBUG
+#include <Streaming.h>
+#endif
+
 // Macros
 // ----------------------------------------------------------------------------
 #define NOP __asm__ __volatile__ ("nop\n\t")
 
-// Normal
-//#define SET_COL_PINS(value) ((PORTD=value))
-
-// Serial Debug
+#ifdef SERIAL_DEBUG
 #define SET_COL_PINS(value) ({                           \
-    PORTD = PORTD + (value & 0xfc);                      \
+    PORTD = (PORTD & 0b00000011) + (value & 0b11111100); \
 })
+#else
+#define SET_COL_PINS(value) ((PORTD=value))
+#endif
 
 #define SET_ROW_PINS(value) ({                           \
-    PORTB = (PORTB & 0b11000000) + (value & 0b00111111); \
-    PORTC = (PORTC & 0b11111100) + (value  >> 6);        \
+    PORTB = (PORTB & 0b11111100) + (value  >> 6);        \
+    PORTC = (PORTC & 0b11000000) + (value & 0b00111111); \
 })
+
 
 // Constants 
 // ----------------------------------------------------------------------------
@@ -41,12 +46,16 @@ void setup()
     SPCR |= _BV(SPE);
 
     // Set data direction for row pins
-    DDRB |= _BV(0) | _BV(1) | _BV(2) | _BV(3)| _BV(4)| _BV(5);
-    DDRC |= _BV(0) | _BV(1);
+    DDRB |= _BV(0) | _BV(1);
+    DDRC |= _BV(0) | _BV(1) | _BV(2) | _BV(3)| _BV(4)| _BV(5);
 
     // Set data direction for col pins
-    //DDRD = 0xff; // Normal 
-    DDRD = 0xfc;   // Serial Debug 
+#ifdef SERIAL_DEBUG
+    DDRD = 0xfc; 
+    Serial.begin(115200);
+#else
+    DDRD = 0xff; 
+#endif
 
     // Set initial state for column and row pins
     SET_COL_PINS(0x00); 
@@ -66,6 +75,8 @@ void loop()
 
     // Read incoming spi message
     // ------------------------------------------------------------------------
+    bufPos = 0;
+
     while (!(SPSR & _BV(SPIF)));
     while (true)
     {
@@ -100,7 +111,6 @@ void loop()
         uint8_t dummy1 = SPDR;
     }
 
-
     // Update display 
     // ------------------------------------------------------------------------
     if (dataReady)
@@ -109,13 +119,13 @@ void loop()
         uint8_t row = 0;
         uint8_t pwm = 0;
         uint8_t pwmShift4 = 0;
-        uint8_t colValue = 0xff;
+        uint8_t colValue = 0x00;
         uint8_t dummy = 0;
-        uint8_t pwmMaxCount;
-        uint8_t delayValue;
+        uint8_t pwmMaxCount = 0;
+        uint8_t delayValue = 0;
 
         // Get max count for pwm and delayValue
-        if (pwmType ==  PWM_TYPE_2_MSG_SIZE)
+        if (pwmType == PWM_TYPE_16)
         {
             pwmMaxCount = 16;
         }
@@ -123,46 +133,49 @@ void loop()
         {
             pwmMaxCount = 2;
         }
-        delayValue = (*buffer & DELAY_MASK);
+        delayValue = (*bufferPtr & DELAY_MASK);
 
-        row = 0;
+        SET_ROW_PINS(~_BV(0));
+
         while (row < 8)
         {
             // Get column values based on matrix
-            colValue = 0xff;
+            colValue = 0x00;
+
             if (pwmMaxCount == 16)
             {
                 // 16 -level grayscale (~1.3kHz)
                 pwmShift4 = pwm << 4; 
 
                 bufferPtr = buffer + 4*row + 1;
-                if ((*bufferPtr & 0x0f) > pwm      ) { colValue &= ~_BV(0); } else { dummy &= ~_BV(0); }
-                if ((*bufferPtr & 0xf0) > pwmShift4) { colValue &= ~_BV(1); } else { dummy &= ~_BV(1); }
+                if ((*bufferPtr & 0x0f) > pwm      ) { colValue |= _BV(0); } else { dummy |= _BV(0); }
+                if ((*bufferPtr & 0xf0) > pwmShift4) { colValue |= _BV(1); } else { dummy |= _BV(1); }
 
                 bufferPtr++;
-                if ((*bufferPtr & 0x0f) > pwm      ) { colValue &= ~_BV(2); } else { dummy &= ~_BV(2); }
-                if ((*bufferPtr & 0xf0) > pwmShift4) { colValue &= ~_BV(3); } else { dummy &= ~_BV(3); }
+                if ((*bufferPtr & 0x0f) > pwm      ) { colValue |= _BV(2); } else { dummy |= _BV(2); }
+                if ((*bufferPtr & 0xf0) > pwmShift4) { colValue |= _BV(3); } else { dummy |= _BV(3); }
 
                 bufferPtr++;
-                if ((*bufferPtr & 0x0f) > pwm      ) { colValue &= ~_BV(4); } else { dummy &= ~_BV(4); }
-                if ((*bufferPtr & 0xf0) > pwmShift4) { colValue &= ~_BV(5); } else { dummy &= ~_BV(5); }
+                if ((*bufferPtr & 0x0f) > pwm      ) { colValue |= _BV(4); } else { dummy |= _BV(4); }
+                if ((*bufferPtr & 0xf0) > pwmShift4) { colValue |= _BV(5); } else { dummy |= _BV(5); }
 
                 bufferPtr++;
-                if ((*bufferPtr & 0x0f) > pwm      ) { colValue &= ~_BV(6); } else { dummy &= ~_BV(6); }
-                if ((*bufferPtr & 0xf0) > pwmShift4) { colValue &= ~_BV(7); } else { dummy &= ~_BV(7); }
+                if ((*bufferPtr & 0x0f) > pwm      ) { colValue |= _BV(6); } else { dummy |= _BV(6); }
+                if ((*bufferPtr & 0xf0) > pwmShift4) { colValue |= _BV(7); } else { dummy |= _BV(7); }
+
             }
             else
             {
                 // 2-level grayscale (~9.8 kHz)
                 bufferPtr = buffer + row + 1;
-                if (((*bufferPtr & 0x01) >> 0) > pwm) { colValue &= ~_BV(0); } else { dummy &= ~_BV(0); }
-                if (((*bufferPtr & 0x02) >> 1) > pwm) { colValue &= ~_BV(1); } else { dummy &= ~_BV(1); }
-                if (((*bufferPtr & 0x04) >> 2) > pwm) { colValue &= ~_BV(2); } else { dummy &= ~_BV(2); }
-                if (((*bufferPtr & 0x08) >> 3) > pwm) { colValue &= ~_BV(3); } else { dummy &= ~_BV(3); }
-                if (((*bufferPtr & 0x10) >> 4) > pwm) { colValue &= ~_BV(4); } else { dummy &= ~_BV(4); }
-                if (((*bufferPtr & 0x20) >> 5) > pwm) { colValue &= ~_BV(5); } else { dummy &= ~_BV(5); }
-                if (((*bufferPtr & 0x40) >> 6) > pwm) { colValue &= ~_BV(6); } else { dummy &= ~_BV(6); }
-                if (((*bufferPtr & 0x80) >> 7) > pwm) { colValue &= ~_BV(7); } else { dummy &= ~_BV(7); }
+                if (((*bufferPtr & 0x01) >> 0) > pwm) { colValue |= _BV(0); } else { dummy |= _BV(0); }
+                if (((*bufferPtr & 0x02) >> 1) > pwm) { colValue |= _BV(1); } else { dummy |= _BV(1); }
+                if (((*bufferPtr & 0x04) >> 2) > pwm) { colValue |= _BV(2); } else { dummy |= _BV(2); }
+                if (((*bufferPtr & 0x08) >> 3) > pwm) { colValue |= _BV(3); } else { dummy |= _BV(3); }
+                if (((*bufferPtr & 0x10) >> 4) > pwm) { colValue |= _BV(4); } else { dummy |= _BV(4); }
+                if (((*bufferPtr & 0x20) >> 5) > pwm) { colValue |= _BV(5); } else { dummy |= _BV(5); }
+                if (((*bufferPtr & 0x40) >> 6) > pwm) { colValue |= _BV(6); } else { dummy |= _BV(6); }
+                if (((*bufferPtr & 0x80) >> 7) > pwm) { colValue |= _BV(7); } else { dummy |= _BV(7); }
             }
             SET_COL_PINS(colValue);
 
@@ -173,7 +186,14 @@ void loop()
                 pwm = 0;
                 row++;
                 SET_COL_PINS(0x00);
-                SET_ROW_PINS(~_BV(row%8));
+                if (row < 8)
+                {
+                    SET_ROW_PINS(~_BV(row%8));
+                }
+                else
+                {
+                    SET_ROW_PINS(0xff);
+                }
             }
             if (delayValue > 0)
             {
@@ -182,10 +202,9 @@ void loop()
                     NOP;
                 }
             }
-        }
+
+        } // while (row<8)
     }
-    // Reset buffer position
-    bufPos = 0;
 }
 
 

@@ -22,26 +22,30 @@ void loop()
 
     // Testing
     // --------------------------------------------
+    static uint8_t value = 0;
+    static uint8_t updateCount = 0;
     interrupts();
-    delay(200);
+    delay(5);
     noInterrupts();
 
-    for (uint8_t i=0; i<BUFFER_SIZE; i++)
-    {
-        buffer.data[i] = 0;
-        buffer.dataLen++;
-    }
 
-    uint8_t msgSize = SLAVE_TYPE_2_MSG_SIZE;
+    uint8_t msgSize = PWM_TYPE_16_MSG_SIZE;
     for (uint8_t i=0; i<NUM_SLAVE;i++)
     {
-        buffer.insert(msgSize);
-        for (uint8_t j=0; j<msgSize; j++)
+        buffer.insert(PWM_TYPE_16);
+
+        for (uint8_t j=1; j<msgSize; j++)
         {
-            buffer.insert(j);
+            buffer.insert((value << 4) | value);
         }
     }
     buffer.dataReady = true;
+    updateCount++;
+    if (updateCount >= 20)
+    {
+        updateCount = 0;
+        value = (value + 1)%16;
+    }
     // ---------------------------------------------
 
     MSPIM_SendDataToSlaves(buffer);
