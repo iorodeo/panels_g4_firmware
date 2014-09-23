@@ -24,9 +24,9 @@ void loop()
     // --------------------------------------------
     static uint8_t value = 0;
     static uint8_t updateCount = 0;
-    interrupts();
+    //interrupts();
     delay(5);
-    noInterrupts();
+    //noInterrupts();
 
 
     uint8_t msgSize = PWM_TYPE_16_MSG_SIZE;
@@ -36,12 +36,13 @@ void loop()
 
         for (uint8_t j=1; j<msgSize; j++)
         {
-            buffer.insert((value << 4) | value);
+            //buffer.insert((value << 4) | value);
+            buffer.insert(value);
         }
     }
     buffer.dataReady = true;
     updateCount++;
-    if (updateCount >= 20)
+    if (updateCount >= 100)
     {
         updateCount = 0;
         value = (value + 1)%16;
