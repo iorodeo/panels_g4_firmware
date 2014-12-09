@@ -10,9 +10,9 @@
 // ============================================================================
 
 // SPI and and I2C communication parameters
-const uint8_t SPI_NUM_SLAVES = 4;                          // # panels which can be stacked 
-const uint8_t I2C_NUM_SLAVES = 4;                          // Four i2c slaves per panel
-const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {4,5,6,7};  // SPI chip select lines
+const uint8_t SPI_NUM_SLAVES = 8;                                 // # panels which can be stacked 
+const uint8_t I2C_NUM_SLAVES = 4;                                 // Four i2c slaves per panel
+const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {4,5,6,7,8,9,3,2};     // SPI chip select lines
 
 const uint8_t I2C_TYPE_2_MSG_SIZE = 9;
 const uint8_t I2C_TYPE_16_MSG_SIZE = 33;
@@ -36,7 +36,7 @@ const uint8_t PWM_TYPE_16 = 1;
 const uint8_t PWM_TYPE_MASK = 0x01;
 
 // Counter used for updating to next pattern in buffer  - sets stripe speed.
-const uint16_t PWM_UPDATE_CNT_TYPE_16 = 20;  
+const uint16_t PWM_UPDATE_CNT_TYPE_16 = 15;  
 const uint16_t PWM_UPDATE_CNT_TYPE_2 = 50;  
 
 // Display configuration parameters
@@ -49,8 +49,9 @@ const uint8_t BUFFER_ARRAY_SIZE = 9;
 const uint8_t ALL_ZEROS_BUF_IND = 8;
 
 // Timing parameters
-const uint16_t LOOP_DELAY_TYPE_16 = 310; // us
-const uint16_t LOOP_DELAY_TYPE_2 =  150; // us
+//const uint16_t LOOP_DELAY_TYPE_16 = 310; // us
+const uint16_t LOOP_DELAY_TYPE_16 = 20;   // us
+const uint16_t LOOP_DELAY_TYPE_2 =  150;   // us
 
 // Demo pwm type
 const uint8_t DEMO_PWM_TYPE = PWM_TYPE_16;
@@ -153,14 +154,14 @@ void type16DisplayUpdate()
         slaveToBufIndMap[i2cSlave] = stripeRow%MATRIX_NUM_ROW;
         if (stripeRow < PANEL_NUM_ROW/2)
         {
-            if ((i2cSlave==0) || i2cSlave==1)
+            if ((i2cSlave==0) || i2cSlave==2)
             {
                 slaveToBufIndMap[i2cSlave] = ALL_ZEROS_BUF_IND; 
             }
         } 
         else
         {
-            if ((i2cSlave==2) || (i2cSlave==3))
+            if ((i2cSlave==1) || (i2cSlave==3))
             {
                 slaveToBufIndMap[i2cSlave] = ALL_ZEROS_BUF_IND; 
             }
@@ -195,7 +196,10 @@ void type16DisplayUpdate()
         stripeRow = (stripeRow + 1)%PANEL_NUM_ROW;
     }
 
-    delayMicroseconds(LOOP_DELAY_TYPE_16);
+    if (LOOP_DELAY_TYPE_16 > 0)
+    { 
+        delayMicroseconds(LOOP_DELAY_TYPE_16);
+    }
 }
 
 void type2DisplayUpdate()

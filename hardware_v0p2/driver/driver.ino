@@ -24,7 +24,7 @@
 
 // Constants 
 // ----------------------------------------------------------------------------
-const uint8_t ADDRESS = 4;
+//const uint8_t ADDRESS = 4;
 const uint8_t BUF_SIZE = 0xff;
 const uint16_t TWI_MAX_COUNT = 0xffff;
 const uint8_t PWM_TYPE_MASK = 0x01;
