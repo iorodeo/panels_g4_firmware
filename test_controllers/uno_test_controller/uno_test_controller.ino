@@ -10,9 +10,11 @@
 // ============================================================================
 
 // SPI and and I2C communication parameters
-const uint8_t SPI_NUM_SLAVES = 8;                                 // # panels which can be stacked 
-const uint8_t I2C_NUM_SLAVES = 4;                                 // Four i2c slaves per panel
-const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {4,5,6,7,8,9,3,2};     // SPI chip select lines
+//const uint8_t SPI_NUM_SLAVES = 8;                              // # panels which can be stacked 
+const uint8_t SPI_NUM_SLAVES = 5;                                // # panels which can be stacked 
+const uint8_t I2C_NUM_SLAVES = 4;                                // Four i2c slaves per panel
+//const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {2,5,6,7,8,9,3,4};     // SPI chip select lines
+const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {2,4,5,6,7};             // SPI chip select lines
 
 const uint8_t I2C_TYPE_2_MSG_SIZE = 9;
 const uint8_t I2C_TYPE_16_MSG_SIZE = 33;
@@ -50,11 +52,20 @@ const uint8_t ALL_ZEROS_BUF_IND = 8;
 
 // Timing parameters
 //const uint16_t LOOP_DELAY_TYPE_16 = 310; // us
-const uint16_t LOOP_DELAY_TYPE_16 = 20;   // us
+//const uint16_t LOOP_DELAY_TYPE_16 = 20;   // us
+const uint16_t LOOP_DELAY_TYPE_16 = 800;   // us
 const uint16_t LOOP_DELAY_TYPE_2 =  150;   // us
 
 // Demo pwm type
 const uint8_t DEMO_PWM_TYPE = PWM_TYPE_16;
+
+// Synchronization parameters
+const uint8_t SYNC_TYPE_MASTER = 0;
+const uint8_t SYNC_TYPE_SLAVE = 1;
+//const uint8_t SYNC_TYPE = SYNC_TYPE_MASTER;
+const uint8_t SYNC_TYPE = SYNC_TYPE_SLAVE;
+const uint8_t SYNC_PIN = 3;
+volatile bool syncFlag = false;
 
 
 // Function prototypes
@@ -93,11 +104,14 @@ void zeroType2_I2CBufferArray(
 
 uint8_t getType2StripeMatrix(uint8_t bufNum, uint8_t row, uint8_t col);
 
+void onSyncPulse();
+
 // Arduino entry point functions 
 // ============================================================================
 
 void setup()
 {
+    Serial.begin(115200);
     // Set Special (hardware overlapping) pins to inputs - so they don't 
     // interfere with SPI communications. This is due to re-use (re-wiring) of
     // colorimeter Arduino shield.
@@ -114,10 +128,36 @@ void setup()
     }
     SPI.begin();
     SPI.setClockDivider(SPI_CLOCK_DIV4);
+
+    if (SYNC_TYPE == SYNC_TYPE_MASTER)
+    {
+        pinMode(SYNC_PIN,OUTPUT);
+        digitalWrite(SYNC_PIN,LOW);
+        delay(1000);
+    }
+    else
+    {
+        pinMode(SYNC_PIN,INPUT);
+        attachInterrupt(1,onSyncPulse,RISING);
+    }
+
 }
 
 void loop()
 {
+    Serial << "loop" << endl;
+    if (SYNC_TYPE == SYNC_TYPE_MASTER)
+    {
+        digitalWrite(SYNC_PIN, HIGH);
+        delayMicroseconds(200);
+        digitalWrite(SYNC_PIN,LOW);
+    }
+    else
+    {
+        while (!syncFlag) {};
+        syncFlag = false;
+    }
+
     if (DEMO_PWM_TYPE == PWM_TYPE_16)
     {
         type16DisplayUpdate();
@@ -130,6 +170,12 @@ void loop()
 
 // Display update demos
 // ============================================================================
+
+void onSyncPulse()
+{
+    syncFlag = true;
+}
+
 void type16DisplayUpdate()
 {
     static uint8_t bufferArray[BUFFER_ARRAY_SIZE][I2C_TYPE_16_MSG_SIZE];
@@ -196,7 +242,7 @@ void type16DisplayUpdate()
         stripeRow = (stripeRow + 1)%PANEL_NUM_ROW;
     }
 
-    if (LOOP_DELAY_TYPE_16 > 0)
+    if ( (LOOP_DELAY_TYPE_16 > 0) && (SYNC_TYPE==SYNC_TYPE_MASTER) )
     { 
         delayMicroseconds(LOOP_DELAY_TYPE_16);
     }
@@ -264,7 +310,10 @@ void type2DisplayUpdate()
         stripeRow = (stripeRow + 1)%PANEL_NUM_ROW;
     }
 
-    delayMicroseconds(LOOP_DELAY_TYPE_2);
+    if ((LOOP_DELAY_TYPE_2 > 0) && (SYNC_TYPE == SYNC_TYPE_MASTER))
+    {
+        delayMicroseconds(LOOP_DELAY_TYPE_2);
+    }
 }
 
 // Buffer array creation functions
