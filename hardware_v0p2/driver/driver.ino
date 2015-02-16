@@ -24,7 +24,6 @@
 
 // Constants 
 // ----------------------------------------------------------------------------
-//const uint8_t ADDRESS = 4;
 const uint8_t BUF_SIZE = 0xff;
 const uint16_t TWI_MAX_COUNT = 0xffff;
 const uint8_t PWM_TYPE_MASK = 0x01;
@@ -68,14 +67,14 @@ void setup()
 void loop()
 {
     static uint8_t buffer[BUF_SIZE];
-    static uint8_t bufPos = 0;
     bool dataReady = false;
+    uint8_t bufPos = 0;
     uint8_t msgSize;
     uint8_t pwmType;
 
     // Read incoming spi message
     // ------------------------------------------------------------------------
-    bufPos = 0;
+    while (digitalRead(SS) == 1); // Slow replace with direct port read
 
     while (!(SPSR & _BV(SPIF)));
     while (true)

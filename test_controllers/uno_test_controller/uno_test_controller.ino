@@ -11,10 +11,12 @@
 
 // SPI and and I2C communication parameters
 //const uint8_t SPI_NUM_SLAVES = 8;                              // # panels which can be stacked 
-const uint8_t SPI_NUM_SLAVES = 5;                                // # panels which can be stacked 
+const uint8_t SPI_NUM_SLAVES = 1;                                // # panels which can be stacked 
 const uint8_t I2C_NUM_SLAVES = 4;                                // Four i2c slaves per panel
 //const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {2,5,6,7,8,9,3,4};     // SPI chip select lines
-const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {2,4,5,6,7};             // SPI chip select lines
+//const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {2,4,5,6,7};             // SPI chip select lines
+//const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {2,4,5};             // SPI chip select lines
+const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {2};             // SPI chip select lines
 
 const uint8_t I2C_TYPE_2_MSG_SIZE = 9;
 const uint8_t I2C_TYPE_16_MSG_SIZE = 33;
@@ -38,8 +40,9 @@ const uint8_t PWM_TYPE_16 = 1;
 const uint8_t PWM_TYPE_MASK = 0x01;
 
 // Counter used for updating to next pattern in buffer  - sets stripe speed.
-const uint16_t PWM_UPDATE_CNT_TYPE_16 = 15;  
-const uint16_t PWM_UPDATE_CNT_TYPE_2 = 50;  
+//const uint16_t PWM_UPDATE_CNT_TYPE_16 = 15;  
+const uint16_t PWM_UPDATE_CNT_TYPE_16 = 30;  
+const uint16_t PWM_UPDATE_CNT_TYPE_2 = 100;  
 
 // Display configuration parameters
 const uint8_t MATRIX_NUM_ROW = 8;
@@ -53,17 +56,19 @@ const uint8_t ALL_ZEROS_BUF_IND = 8;
 // Timing parameters
 //const uint16_t LOOP_DELAY_TYPE_16 = 310; // us
 //const uint16_t LOOP_DELAY_TYPE_16 = 20;   // us
-const uint16_t LOOP_DELAY_TYPE_16 = 800;   // us
-const uint16_t LOOP_DELAY_TYPE_2 =  150;   // us
+const uint16_t LOOP_DELAY_TYPE_16 =  300;   // us
+const uint16_t LOOP_DELAY_TYPE_2 =  150;    // us
+//const uint16_t LOOP_DELAY_TYPE_2 =  65;    // us
 
 // Demo pwm type
 const uint8_t DEMO_PWM_TYPE = PWM_TYPE_16;
+//const uint8_t DEMO_PWM_TYPE = PWM_TYPE_2;
 
 // Synchronization parameters
 const uint8_t SYNC_TYPE_MASTER = 0;
 const uint8_t SYNC_TYPE_SLAVE = 1;
-//const uint8_t SYNC_TYPE = SYNC_TYPE_MASTER;
-const uint8_t SYNC_TYPE = SYNC_TYPE_SLAVE;
+const uint8_t SYNC_TYPE = SYNC_TYPE_MASTER;
+//const uint8_t SYNC_TYPE = SYNC_TYPE_SLAVE;
 const uint8_t SYNC_PIN = 3;
 volatile bool syncFlag = false;
 
@@ -145,7 +150,6 @@ void setup()
 
 void loop()
 {
-    Serial << "loop" << endl;
     if (SYNC_TYPE == SYNC_TYPE_MASTER)
     {
         digitalWrite(SYNC_PIN, HIGH);
@@ -198,20 +202,20 @@ void type16DisplayUpdate()
     for (uint8_t i2cSlave=0; i2cSlave<I2C_NUM_SLAVES; i2cSlave++)
     { 
         slaveToBufIndMap[i2cSlave] = stripeRow%MATRIX_NUM_ROW;
-        if (stripeRow < PANEL_NUM_ROW/2)
-        {
-            if ((i2cSlave==0) || i2cSlave==2)
-            {
-                slaveToBufIndMap[i2cSlave] = ALL_ZEROS_BUF_IND; 
-            }
-        } 
-        else
-        {
-            if ((i2cSlave==1) || (i2cSlave==3))
-            {
-                slaveToBufIndMap[i2cSlave] = ALL_ZEROS_BUF_IND; 
-            }
-        }
+        //if (stripeRow < PANEL_NUM_ROW/2)
+        //{
+        //    if ((i2cSlave==0) || i2cSlave==2)
+        //    {
+        //        slaveToBufIndMap[i2cSlave] = ALL_ZEROS_BUF_IND; 
+        //    }
+        //} 
+        //else
+        //{
+        //    if ((i2cSlave==1) || (i2cSlave==3))
+        //    {
+        //        slaveToBufIndMap[i2cSlave] = ALL_ZEROS_BUF_IND; 
+        //    }
+        //}
     }
 
     // Send SPI message
@@ -410,14 +414,32 @@ void zeroType16_I2CBufferArray(
 // ----------------------------------------------------------------------------
 uint8_t getType16StripeMatrix(uint8_t bufNum, uint8_t row, uint8_t col)
 {
+    if (bufNum == ALL_ZEROS_BUF_IND)
+    {
+        return 0;
+    }
+    //return 0xf;
+
     if (row==bufNum)
     {
         return 0xf;  // on - full brightness
+        //return 0x1;  // on - full brightness
+        //return 0;  // on - full brightness
     }
     else
     { 
         return 0;   // off 
+        //return 0xf;
     }
+
+    //if (col==bufNum)
+    //{
+    //    return 0xf;
+    //}
+    //else
+    //{
+    //    return 0x0;
+    //}
 }
 
 
