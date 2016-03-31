@@ -4,8 +4,10 @@
 // --------------------------------------------------------------------------------------
 //const int ssPin = 4;
 const uint8_t SPI_CLOCK_DIV = 21;
-const uint8_t SPI_NUM_SLAVES = 4;
-const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {4,10,52,7};
+//const uint8_t SPI_NUM_SLAVES = 4;
+//const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {4,10,52,7};
+const uint8_t SPI_NUM_SLAVES = 1;
+const uint8_t SPI_PIN_ARRAY[SPI_NUM_SLAVES]  = {4};
 const uint8_t I2C_NUM_SLAVES=4;
 const uint8_t I2C_TYPE_2_MSG_SIZE = 9;
 const uint8_t SPI_TYPE_2_MSG_SIZE = 4*I2C_TYPE_2_MSG_SIZE;
@@ -15,7 +17,7 @@ const uint8_t SPI_TYPE_16_MSG_SIZE = 4*I2C_TYPE_16_MSG_SIZE;
 const uint8_t PWM_TYPE_MASK = 0x01;
 const uint8_t PWM_TYPE_2 = 0;
 const uint8_t PWM_TYPE_16 = 1;
-const uint16_t PWM_UPDATE_CNT = 10; 
+const uint16_t PWM_UPDATE_CNT = 100; 
 
 const uint8_t DELAY_MASK = 0xfe;
 const uint8_t DELAY_SHIFT = 1;
@@ -24,7 +26,7 @@ const uint8_t MATRIX_NUM_ROW = 8;
 const uint8_t MATRIX_NUM_COL = 8;
 const uint8_t BUFFER_ARRAY_SIZE = 16;
 
-const uint16_t LOOP_DELAY = 160;
+const uint16_t LOOP_DELAY = 1510;
 
 
 // Function prototypes
@@ -42,6 +44,8 @@ void zeroType16BufferArray(
 
 uint8_t getConstType16Matrix(uint8_t bufNum, uint8_t slaveNum, uint8_t row, uint8_t col);
 uint8_t getRowStripeType16Matrix(uint8_t  bufNum, uint8_t slaveNum, uint8_t row, uint8_t col);
+uint8_t getColFillType16Matrix(uint8_t bufNum, uint8_t slaveNum, uint8_t row, uint8_t col);
+uint8_t getDiagFillType16Matrix(uint8_t bufNum, uint8_t slaveNum, uint8_t row, uint8_t col);
 
 
 // Arduino functions 
@@ -80,7 +84,9 @@ void loop()
     if (isFirst)
     {
         zeroType16BufferArray(bufferArray,BUFFER_ARRAY_SIZE);
-        createType16BufferArray(bufferArray,BUFFER_ARRAY_SIZE,getRowStripeType16Matrix);
+        //createType16BufferArray(bufferArray,BUFFER_ARRAY_SIZE,getRowStripeType16Matrix);
+        createType16BufferArray(bufferArray,BUFFER_ARRAY_SIZE,getColFillType16Matrix);
+        //createType16BufferArray(bufferArray,BUFFER_ARRAY_SIZE,getDiagFillType16Matrix);
         isFirst = false;
     }
 
@@ -227,3 +233,27 @@ uint8_t getRowStripeType16Matrix(uint8_t  bufNum, uint8_t slaveNum, uint8_t row,
     return value;
 }
 
+uint8_t getColFillType16Matrix(uint8_t bufNum, uint8_t slaveNum, uint8_t row, uint8_t col)
+{
+    uint8_t bufNumMod8  = bufNum%8;
+    uint8_t value = 0;
+
+    if (col <= bufNumMod8)
+    //if (col <= 7)
+    {
+        value = 15;
+    }
+    return value;
+}
+
+uint8_t getDiagFillType16Matrix(uint8_t bufNum, uint8_t slaveNum, uint8_t row, uint8_t col)
+{
+    uint8_t bufNumMod8 = bufNum%8;
+    uint8_t value = 0;
+
+    if (col <= row)
+    {
+        value = 15;
+    }
+    return value;
+}
