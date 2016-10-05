@@ -1,5 +1,7 @@
 #include <util/twi.h>
 
+#define INVERT_ROW_PINS
+
 #ifdef SERIAL_DEBUG
 #include <Streaming.h>
 #endif
@@ -16,10 +18,22 @@
 #define SET_COL_PINS(value) ((PORTD=value))
 #endif
 
+#ifdef INVERT_ROW_PINS
+
+#define SET_ROW_PINS(value) ({                              \
+    PORTB = (PORTB & 0b11111100) + ((~value) >> 6);         \
+    PORTC = (PORTC & 0b11000000) + ((~value) & 0b00111111); \
+})
+
+
+#else
+
 #define SET_ROW_PINS(value) ({                           \
     PORTB = (PORTB & 0b11111100) + (value  >> 6);        \
     PORTC = (PORTC & 0b11000000) + (value & 0b00111111); \
 })
+
+#endif
 
 
 // Constants 
