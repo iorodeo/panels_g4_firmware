@@ -68,6 +68,9 @@ void MSPIM_Initialize()
     }
     *SLAVE_MSPIM_DDR_REG |= ssPinMask;
 
+    // Set Chip select line high
+    *SLAVE_MSPIM_OUT_REG |= ssPinMask;
+
     UBRR0 = 0;                               // Must be zero before enabling the transmitter
     UCSR0A = _BV (TXC0);                     // any old transmit now complete 
     UCSR0C = _BV(UMSEL00) | _BV(UMSEL01);    // Master SPI mode
